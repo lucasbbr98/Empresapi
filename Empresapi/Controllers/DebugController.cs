@@ -119,7 +119,8 @@ namespace Empresapi.Controllers
 
         }
 
-        [HttpGet("")]
+        [HttpGet("dqwdwqdwq")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> InsertITRShareCapitals()
         {
             try
