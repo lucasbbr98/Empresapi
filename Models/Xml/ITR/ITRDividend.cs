@@ -4,6 +4,7 @@ using System.Xml.Linq;
 
 namespace Models.Xml.ITR
 {
+    using Constants;
     using Base;
 
     public class ITRDividend : XmlModel<ITRDividend>
@@ -22,9 +23,10 @@ namespace Models.Xml.ITR
 
         public ITRDividend() { }
 
-        public override string DocumentRoot() => "ArrayOfPagamentoProventoDinheiroDemonstracaoFinanceira";
-        public override string ElementXPath() => "PagamentoProventoDinheiroDemonstracaoFinanceira";
-
+        public override string Extension() => CVMFileExtension.ITR;
+        public override string DocumentRoot() => CVMDocumentRoot.ITRDividends;
+        public override string ElementXPath() => CVMElement.ITRDividends;
+        public override string Filename() => CVMFile.ITRDividends;
 
         public ITRDividend(int p, string ea, string e, DateTime a, string sta, string st, string dt, DateTime pd, float dps)
         {

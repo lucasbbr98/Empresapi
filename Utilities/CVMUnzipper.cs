@@ -2,12 +2,22 @@
 using System.IO;
 using System.IO.Compression;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Utilities
 {
     public static class CVMUnzipper
     {
+        public static string OpenScaleFile(Stream response, string filename)
+        {
+            var scaleFile = UnzipRootFile(response, filename);
+            if (scaleFile == null)
+                return null;
+
+            return new StreamReader(scaleFile, Encoding.UTF8).ReadToEnd();
+
+        }
+
+
         public static string OpenFile(Stream response, string rootExtension, string filename)
         {
             var unzippedRoot = Unzip(response, rootExtension);
@@ -29,6 +39,16 @@ namespace Utilities
             ZipArchive archive = new ZipArchive(data);
             foreach (ZipArchiveEntry entry in archive.Entries)
                 if (entry.FullName.EndsWith($".{extension}", StringComparison.OrdinalIgnoreCase))
+                    return entry.Open();
+
+            return null;
+        }
+
+        private static Stream UnzipRootFile(Stream data, string filename)
+        {
+            ZipArchive archive = new ZipArchive(data);
+            foreach (ZipArchiveEntry entry in archive.Entries)
+                if (entry.FullName == filename)
                     return entry.Open();
 
             return null;

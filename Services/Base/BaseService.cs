@@ -47,7 +47,7 @@ namespace Services
             }
         }
 
-        public async Task<T> Get(int id, string fields = null)
+        public async Task<T> Get(int id, string fields = null, bool showDeactivated = false)
         {
             try
             {
@@ -57,6 +57,8 @@ namespace Services
                     selectQuery = fields;
 
                 string query = $"SELECT {selectQuery} FROM `{DbName}` WHERE Id = @Id AND DeactivatedOn IS NULL";
+                if (showDeactivated)
+                    query = $@"SELECT {selectQuery} FROM `{DbName}` WHERE Id = @Id";
 
 
                 using (var con = new MySqlConnection(GetConnection()))
@@ -69,7 +71,7 @@ namespace Services
             }
         }
 
-        public async Task<T> GetWhere(object list, string fields = null)
+        public async Task<T> GetWhere(object list, string fields = null, bool showDeactivated = false)
         {
             try
             {
@@ -87,6 +89,9 @@ namespace Services
                     selectQuery = fields;
 
                 string query = $"SELECT {selectQuery} FROM `{DbName}` WHERE {parameterSqlString} DeactivatedOn IS NULL";
+                if (showDeactivated)
+                    query = $@"SELECT {selectQuery} FROM `{DbName}` WHERE {parameterSqlString}";
+
                 using (var con = new MySqlConnection(GetConnection()))
                     return await con.QueryFirstOrDefaultAsync<T>(query, list);
             }
@@ -97,7 +102,7 @@ namespace Services
             }
         }
 
-        public async Task<IEnumerable<T>> GetAll(string fields = null)
+        public async Task<IEnumerable<T>> GetAll(string fields = null, bool showDeactivated = false)
         {
             try
             {
@@ -106,6 +111,9 @@ namespace Services
                     selectQuery = fields;
 
                 string query = $@"SELECT {selectQuery} FROM `{DbName}` WHERE DeactivatedOn IS NULL";
+                if (showDeactivated)
+                    query = $@"SELECT {selectQuery} FROM `{DbName}`";
+
                 using (var con = new MySqlConnection(GetConnection()))
                     return await con.QueryAsync<T>(query);
             }
@@ -116,7 +124,7 @@ namespace Services
             }
         }
 
-        public async Task<IEnumerable<T>> GetAllWhere(object list, string fields = null)
+        public async Task<IEnumerable<T>> GetAllWhere(object list, string fields = null, bool showDeactivated = false)
         {
             try
             {
@@ -134,6 +142,9 @@ namespace Services
                     selectQuery = fields;
 
                 string query = $@"SELECT {selectQuery} FROM `{DbName}` WHERE {parameterSqlString} DeactivatedOn IS NULL";
+                if(showDeactivated)
+                    query = $@"SELECT {selectQuery} FROM `{DbName}` WHERE {parameterSqlString}".Remove($@"SELECT {selectQuery} FROM `{DbName}` WHERE {parameterSqlString}".LastIndexOf("AND"), "AND".Length);
+
                 using (var con = new MySqlConnection(GetConnection()))
                     return await con.QueryAsync<T>(query, list);
             }
@@ -193,8 +204,7 @@ namespace Services
                 string sql = $@"
                     UPDATE `{DbName}` 
 					SET
-					    `DeactivatedOn` = @DeactivatedOn,
-					    `DeactivatedBy` = @DeactivatedBy
+					    `DeactivatedOn` = @DeactivatedOn
                     WHERE
 					    `Id` = @Id";
 

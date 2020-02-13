@@ -3,6 +3,7 @@ using System.Xml.Linq;
 
 namespace Models.Xml.ITR
 {
+    using Constants;
     using Base;
 
     public class ITRShareCapital : XmlModel<ITRShareCapital>
@@ -18,8 +19,10 @@ namespace Models.Xml.ITR
 
         public ITRShareCapital() { }
 
-        public override string DocumentRoot() => "ArrayOfComposicaoCapitalSocialDemonstracaoFinanceira";
-        public override string ElementXPath() => "ComposicaoCapitalSocialDemonstracaoFinanceira";
+        public override string Extension() => CVMFileExtension.ITR;
+        public override string DocumentRoot() => CVMDocumentRoot.ITRShareCapitals;
+        public override string ElementXPath() => CVMElement.ITRShareCapitals;
+        public override string Filename() => CVMFile.ITRShareCapitals;
 
 
         public ITRShareCapital(int s, float os, float ps, float ost, float pst)

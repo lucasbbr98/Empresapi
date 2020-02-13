@@ -7,10 +7,10 @@ namespace Services.Interfaces
 {
     public interface IService<T> where T : Model
     {
-        public Task<IEnumerable<T>> GetAll(string fields = null);
-        public Task<T> Get(int id, string fields = null);
-        public Task<IEnumerable<T>> GetAllWhere(object list, string fields = null);
-        public Task<T> GetWhere(object list, string fields = null);
+        public Task<IEnumerable<T>> GetAll(string fields = null, bool showDeactivated = false);
+        public Task<T> Get(int id, string fields = null, bool showDeactivated = false);
+        public Task<IEnumerable<T>> GetAllWhere(object list, string fields = null, bool showDeactivated = false);
+        public Task<T> GetWhere(object list, string fields = null, bool showDeactivated = false);
         public Task<bool?> Exists(int id);
         public Task<bool?> ExistsWhere(object list);
         public Task<HttpStatusCode> Add(T obj);

@@ -17,7 +17,7 @@ namespace Services
         public async Task<Stream> DownloadFile(string url)
         {
             var uri = new Uri(url);
-            var response = await GetAsync(uri);
+            var response = await GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
             if (response.IsSuccessStatusCode)
                return await response.Content.ReadAsStreamAsync();
 

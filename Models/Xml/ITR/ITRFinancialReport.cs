@@ -4,6 +4,8 @@ using System.Xml.Linq;
 namespace Models.Xml.ITR
 {
     using Base;
+    using Constants;
+    using Models.Attributes;
 
     public class ITRFinancialReport : XmlModel<ITRFinancialReport>
     {
@@ -18,9 +20,10 @@ namespace Models.Xml.ITR
 
         public ITRFinancialReport() { }
 
-        public override string DocumentRoot() => "ArrayOfInfoFinaDFin";
-        public override string ElementXPath() => "InfoFinaDFin";
-
+        public override string Extension() => CVMFileExtension.ITR;
+        public override string DocumentRoot() => CVMDocumentRoot.ITRFinancialReports;
+        public override string ElementXPath() => CVMElement.ITRFinancialReports;
+        public override string Filename() => CVMFile.ITRFinancialReports;
 
         public ITRFinancialReport(int r, string an, string ad, float v, bool co)
         {
@@ -44,7 +47,7 @@ namespace Models.Xml.ITR
             if (consolidated == null)
                 throw new ArgumentNullException();
 
-            var reportType = int.Parse(e.Element("PlanoConta").Element("NumeroConta").Value.Substring(0 ,1).Replace(".", ""));
+            var reportType = int.Parse(e.Element("PlanoConta").Element("NumeroConta").Value.Substring(0, 1).Replace(".", ""));
             float? value = null;
             if (reportType == 1)
                 value = float.Parse(e.Element("ValorConta2").Value);

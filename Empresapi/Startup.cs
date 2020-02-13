@@ -14,6 +14,8 @@ namespace Empresapi
     using Services;
     using Services.CVM;
     using Services.CVM.ITR;
+    using Services.CVM.DFP;
+
     using Services.CVM.FCA;
     using Services.Interfaces;
 
@@ -69,9 +71,10 @@ namespace Empresapi
             services.AddTransient<IITRDividendService, ITRDividendService>();
             services.AddTransient<IITRShareCapitalService, ITRShareCapitalService>();
             services.AddTransient<IITRFinancialReportService, ITRFinancialReportService>();
+            services.AddTransient<IDFPFinancialReportService, DFPFinancialReportService>();
+            services.AddTransient<IFCACompanyIssuerService, FCACompanyIssuerService>();
             services.AddTransient<IFCACompanySecurityService, FCACompanySecurityService>();
-
-
+            services.AddTransient<IFCACompanyIssuerService, FCACompanyIssuerService>();
 
         }
 
