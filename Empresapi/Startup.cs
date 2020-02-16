@@ -18,6 +18,7 @@ namespace Empresapi
 
     using Services.CVM.FCA;
     using Services.Interfaces;
+    using Services.CVM.FRE;
 
     public class Startup
     {
@@ -75,6 +76,12 @@ namespace Empresapi
             services.AddTransient<IFCACompanyIssuerService, FCACompanyIssuerService>();
             services.AddTransient<IFCACompanySecurityService, FCACompanySecurityService>();
             services.AddTransient<IFCACompanyIssuerService, FCACompanyIssuerService>();
+            services.AddTransient<IFRECompanyIntangibleService, FRECompanyIntangibleService>();
+            services.AddTransient<IFRECompanyOwnershipService, FRECompanyOwnershipService>();
+            services.AddTransient<IFRECompanyFixedAssetService, FRECompanyFixedAssetService>();
+            services.AddTransient<IFRECompanyAuditorService, FRECompanyAuditorService>();
+            services.AddTransient<IFRECompanyDebtService, FRECompanyDebtService>();
+
 
         }
 

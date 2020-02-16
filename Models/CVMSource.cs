@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Models.Attributes;
+using System;
 
 namespace Models
 {
@@ -11,6 +12,8 @@ namespace Models
         public string Document { get; set; }
         public DateTime ReferenceDate { get; set; }
         public string Situation { get; set; }
+        public int CurrencyScale { get; set; }
+        public int QuantityScale { get; set; }
 
         public CVMSource() { }
     }

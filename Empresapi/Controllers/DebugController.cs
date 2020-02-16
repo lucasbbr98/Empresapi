@@ -16,6 +16,11 @@ namespace Empresapi.Controllers
     using Models.Xml.ITR;
     using Models.Xml.FCA;
     using Models.Xml.DFP;
+    using Models.Xml.FRE;
+    using Models.Xml;
+    using Constants;
+    using System.Threading;
+    using System.Net.Http;
 
     public class DebugController : BaseController
     {
@@ -31,6 +36,11 @@ namespace Empresapi.Controllers
         private readonly IITRFinancialReportService itrFinancialReportService;
         private readonly IDFPFinancialReportService dfpFinancialReportService;
         private readonly IFCACompanyIssuerService fcaCompanyIssuerService;
+        private readonly IFRECompanyIntangibleService freCompanyIntangibleService;
+        private readonly IFRECompanyOwnershipService freCompanyOwnershipService;
+        private readonly IFRECompanyFixedAssetService freCompanyFixedAssetService;
+        private readonly IFRECompanyAuditorService freCompanyAuditorService;
+        private readonly IFRECompanyDebtService freCompanyDebtService;
 
         public DebugController(
             ILogger<DebugController> logger,
@@ -43,7 +53,12 @@ namespace Empresapi.Controllers
             IITRShareCapitalService itrShareCapitalService,
             IITRFinancialReportService itrFinancialReportService,
             IDFPFinancialReportService dfpFinancialReportService,
-            IFCACompanyIssuerService fcaCompanyIssuerService
+            IFCACompanyIssuerService fcaCompanyIssuerService,
+            IFRECompanyIntangibleService freCompanyIntangibleService,
+            IFRECompanyOwnershipService freCompanyOwnershipService,
+            IFRECompanyFixedAssetService freCompanyFixedAssetService,
+            IFRECompanyAuditorService freCompanyAuditorService,
+            IFRECompanyDebtService freCompanyDebtService
             )
         {
             this.logger = logger;
@@ -57,10 +72,79 @@ namespace Empresapi.Controllers
             this.itrFinancialReportService = itrFinancialReportService;
             this.dfpFinancialReportService = dfpFinancialReportService;
             this.fcaCompanyIssuerService = fcaCompanyIssuerService;
+            this.freCompanyIntangibleService = freCompanyIntangibleService;
+            this.freCompanyOwnershipService = freCompanyOwnershipService;
+            this.freCompanyFixedAssetService = freCompanyFixedAssetService;
+            this.freCompanyAuditorService = freCompanyAuditorService;
+            this.freCompanyDebtService = freCompanyDebtService;
         }
 
+        [HttpGet("dwqdwqdwqdwq")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> GetSourceScale()
+        {
+            try
+            {
+                var semaphore = new SemaphoreSlim(10, 50); 
+                var sources = (await cvmSourceService.GetAll(showDeactivated: true)).ToList();
+                List<int> errors = new List<int>();
+                List<Task> tasks = new List<Task>();
+                var i = 0;
+                var lastId = sources.Last().Id;
+                foreach (var s in sources)
+                {
+                    try
+                    {
+                        tasks.Add(Task.Run(async() => {
+                            try
+                            {
+                                await semaphore.WaitAsync();
+                                var content = await httpClientService.DownloadFile(s.Url);
+                                var scale = XmlParser<Scale>.GetScale(content, s.Document);
+                                s.CurrencyScale = scale.CurrencyScale;
+                                s.QuantityScale = scale.QuantityScale;
+                                var dbr = await cvmSourceService.Update(s);
+                                if (dbr != HttpStatusCode.OK)
+                                    Debug.Print($"Error: {s.Id}");
+                                else
+                                    Debug.Print($"Updated: {s.Id} out of {sources.Last().Id}");
+                            }
+                            catch(Exception e)
+                            {
+                                Debug.Print($"Error: {s.Id}");
+                                errors.Add(s.Id);
+                            }
+                            finally
+                            {
+                                semaphore.Release();
+                            }
+                            
+                        }));
 
-        [HttpGet("dwqdwqdqwdwq")]
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print($"ERROR {s.Id} | Reason: {ex.ToString()}");
+                    }
+                }
+
+
+                Task.WaitAll(tasks.ToArray());
+
+                return Ok(new
+                {
+                    Code = 200,
+                    Message = "OK"
+                });
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, e.Message);
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("dwqdwqdqwxxx")]
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> InsertCompanyIssuers()
         {
@@ -79,7 +163,7 @@ namespace Empresapi.Controllers
                             continue;
 
                         var content = await httpClientService.DownloadFile(s.Url);
-                        var data = new XmlParser<FCACompanyIssuer>().ParseElements(content);
+                        var data = XmlParser<FCACompanyIssuer>.ParseElements(content);
                         if (!data.Any()) 
                             Debug.Print($"Null Data: {s.Id}");
 
@@ -113,7 +197,7 @@ namespace Empresapi.Controllers
             }
         }
 
-        [HttpGet("dwqdwqdqdqwdwq")]
+        [HttpGet("aadwqdwqdqwxxx")]
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> DeactivateDuplicatedSourceVersion()
         {
@@ -126,7 +210,7 @@ namespace Empresapi.Controllers
                 {
                     i++;
                     Debug.Print($"{i} out of {len}");
-                    var sources = (await cvmSourceService.GetAllWhere(new { Document = "DFP", CompanyId = c.Id })).ToList();
+                    var sources = (await cvmSourceService.GetAllWhere(new { Document = "FRE", CompanyId = c.Id })).ToList();
                     foreach(var s in sources)
                     {
                         var duplicates = sources.Where(x => 
@@ -223,7 +307,7 @@ namespace Empresapi.Controllers
                         if (s.Id < 8700)
                             continue;
                         var content = await httpClientService.DownloadFile(s.Url);
-                        var dividends = new XmlParser<ITRDividend>().ParseElements(content);
+                        var dividends = XmlParser<ITRDividend>.ParseElements(content);
                         if (!dividends.Any())
                             continue;
 
@@ -283,7 +367,7 @@ namespace Empresapi.Controllers
                         i++;
                         Debug.Print($"{i} out of {len}");
                         var content = await httpClientService.DownloadFile(s.Url);
-                        var data = new XmlParser<ITRShareCapital>().ParseElements(content);
+                        var data = XmlParser<ITRShareCapital>.ParseElements(content);
                         if (!data.Any()) { continue; }
 
                         foreach (var d in data)
@@ -339,7 +423,7 @@ namespace Empresapi.Controllers
                         i++;
                         Debug.Print($"{i} OUT OF {len}");
                         var content = await httpClientService.DownloadFile(s.Url);
-                        var data = new XmlParser<ITRFinancialReport>().ParseElements(content);
+                        var data = XmlParser<ITRFinancialReport>.ParseElements(content);
                         data = data.Where(i => i != null && i != default(ITRFinancialReport)).ToList();
                         if (!data.Any()) 
                         {
@@ -400,7 +484,7 @@ namespace Empresapi.Controllers
             }
         }
 
-        [HttpGet("cewcewcsss")]
+        [HttpGet("wqdwdwefw")]
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> InsertDFPFinancialReports()
         {
@@ -411,57 +495,77 @@ namespace Empresapi.Controllers
                 foreach (var d in done)
                     sources.RemoveAll(x => x.Id == d.SourceId);
 
-                var i = 0;
                 var len = sources.Count;
+                List<Task> tasks = new List<Task>();
+                var semaphore = new SemaphoreSlim(20, 80);
+                List<int> errors = new List<int>();
+
+
+                var last = sources.Last().Id;
                 foreach (var s in sources)
                 {
-                    try
-                    {
-                        i++;
-
-                        if (s.Id < 20462)
-                            continue;
-
-                        Debug.Print($"{i} OUT OF {len}");
-                        var content = await httpClientService.DownloadFile(s.Url);
-                        var data = new XmlParser<DFPFinancialReport>().ParseElements(content);
-                        data = data.Where(i => i != null && i != default(DFPFinancialReport)).ToList();
-                        if (!data.Any())
-                            continue;
-                        
-
-
-                        foreach (var d in data)
+                    tasks.Add(Task.Run(async () => {
+                        try
                         {
-                            try
-                            {
-                                d.ReferenceDate = s.ReferenceDate;
-                                d.SourceId = s.Id;
-                                d.CompanyId = s.CompanyId;
-                                d.Year = d.ReferenceDate.Year;
-                                var dbr = await dfpFinancialReportService.Add(d);
-                                if (dbr != HttpStatusCode.OK)
-                                    Debug.Print("ERROR {s.Id}");
-                            }
-                            catch (ArgumentNullException a)
-                            {
-                                Debug.Print($"ERROR {s.Id} | Reason: {a.ToString()}");
-                            }
-                            catch (NotImplementedException n)
-                            {
-                                Debug.Print($"ERROR {s.Id} | Reason: {n.ToString()}");
-                            }
-                            catch (Exception e)
-                            {
-                                Debug.Print($"ERROR {s.Id} | Reason: {e.ToString()}");
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.Print($"ERROR {s.Id} | Reason: {ex.ToString()}");
-                    }
+                            await semaphore.WaitAsync();
+                            var content = await httpClientService.DownloadFile(s.Url);
+                            var data = XmlParser<DFPFinancialReport>.ParseElements(content);
+                            data = data.Where(i => i != null && i != default(DFPFinancialReport)).ToList();
+                            if (!data.Any())
+                                return;
 
+                            foreach (var d in data)
+                            {
+                                try
+                                {
+                                    d.ReferenceDate = s.ReferenceDate;
+                                    d.SourceId = s.Id;
+                                    d.CompanyId = s.CompanyId;
+                                    d.Year = d.ReferenceDate.Year;
+
+                                    var dbr = await dfpFinancialReportService.Add(d);
+                                    if (dbr != HttpStatusCode.OK)
+                                        errors.Add(s.Id);
+
+                                }
+                                catch (ArgumentNullException a)
+                                {
+                                    errors.Add(s.Id);
+                                    Debug.Print($"ERROR {s.Id} | Reason: {a.ToString()}");
+                                }
+                                catch (NotImplementedException n)
+                                {
+                                    errors.Add(s.Id);
+                                    Debug.Print($"ERROR {s.Id} | Reason: {n.ToString()}");
+                                }
+                                catch (Exception e)
+                                {
+                                    errors.Add(s.Id);
+                                    Debug.Print($"ERROR {s.Id} | Reason: {e.ToString()}");
+                                }
+                            }
+
+                            Debug.Print($"Inserted {s.Id} OUT OF {last}");
+                        }
+                        catch (Exception ex)
+                        {
+                            errors.Add(s.Id);
+                            Debug.Print($"ERROR {s.Id} | Reason: {ex.ToString()}");
+                        }
+                        finally
+                        {
+                            semaphore.Release();
+                        }
+                    }));
+ 
+
+                }
+
+                Task.WaitAll(tasks.ToArray());
+                Debug.Print(errors.ToString());
+                foreach(var e in errors)
+                {
+                    Debug.Print($"DELETE AND REDO SourceId {e.ToString()}");
                 }
 
                 return Ok(new
@@ -477,5 +581,92 @@ namespace Empresapi.Controllers
             }
         }
 
+        [HttpGet("")]
+        public async Task<IActionResult> InsertFRE()
+        {
+            try
+            {
+                var sources = (await cvmSourceService.GetAllWhere(new { Document = "FRE" })).ToList();
+                var done = await freCompanyAuditorService.GetAll();
+
+
+
+                var len = sources.Count;
+                List<Task> tasks = new List<Task>();
+                var semaphore = new SemaphoreSlim(20, 80);
+                List<int> errors = new List<int>();
+                List<int> mustDo = new List<int> { 44905, 44913, 44968, 44988, 45102, 45237, 46145, 46177, 46270, 46590, 48121, 48110, 48190, 48252, 48325, 48370, 48350, 48594, 48655 };
+                var last = sources.Last().Id;
+                foreach (var s in sources)
+                {
+                    if (!mustDo.Any(x => x == s.Id))
+                        continue;
+
+                    try
+                    {
+                        var content = await httpClientService.DownloadFile(s.Url);
+                        var data = XmlParser<FRECompanyAuditor>.ParseElements(content);
+                        data = data.Where(i => i != null && i != default(FRECompanyAuditor)).ToList();
+                        if (!data.Any())
+                            continue;
+
+                        foreach (var d in data)
+                        {
+                            try
+                            {
+                                d.ReferenceDate = s.ReferenceDate;
+                                d.SourceId = s.Id;
+                                d.CompanyId = s.CompanyId;
+                                d.Cnpj = Formatter.CNPJ(d.Cnpj);
+
+                                var dbr = await freCompanyAuditorService.Add(d);
+                                if (dbr != HttpStatusCode.OK)
+                                    errors.Add(s.Id);
+
+                            }
+                            catch (ArgumentNullException a)
+                            {
+                                errors.Add(s.Id);
+                                Debug.Print($"ERROR {s.Id} | Reason: {a.ToString()}");
+                            }
+                            catch (NotImplementedException n)
+                            {
+                                errors.Add(s.Id);
+                                Debug.Print($"ERROR {s.Id} | Reason: {n.ToString()}");
+                            }
+                            catch (Exception e)
+                            {
+                                errors.Add(s.Id);
+                                Debug.Print($"ERROR {s.Id} | Reason: {e.ToString()}");
+                            }
+                        }
+
+                        Debug.Print($"Inserted {s.Id} OUT OF {last}");
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add(s.Id);
+                        Debug.Print($"ERROR {s.Id} | Reason: {ex.ToString()}");
+                    }
+                }
+
+                Debug.Print(errors.ToString());
+                foreach (var e in errors)
+                {
+                    Debug.Print($"DELETE AND REDO SourceId {e.ToString()}");
+                }
+
+                return Ok(new
+                {
+                    Code = 200,
+                    Message = "OK"
+                });
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, e.Message);
+                return StatusCode(500);
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Services.Interfaces;
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -10,8 +11,9 @@ namespace Services
     {
         public HttpClientService() : base()
         {
-            Timeout = TimeSpan.FromSeconds(180);
-            MaxResponseContentBufferSize = 50000000; // 50MB
+            ServicePointManager.DefaultConnectionLimit = 20;    // 20 requests
+            Timeout = TimeSpan.FromSeconds(180);                // 3 min
+            MaxResponseContentBufferSize = 100000000;           // 100MB
         }
         
         public async Task<Stream> DownloadFile(string url)

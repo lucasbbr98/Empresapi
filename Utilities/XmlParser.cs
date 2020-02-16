@@ -8,30 +8,20 @@ using System.IO;
 
 namespace Utilities
 {
+    using Constants;
     using Models.Base;
+    using Models.Xml;
 
     public class XmlParser<T> where T: XmlModel<T>, new()
     {
-
         public XmlParser() { }
 
-        public IEnumerable<T> ParseElements(Stream content)
+        public static IEnumerable<T> ParseElements(Stream content)
         {    
             var model = new T();
-            string xmlScale = null;
-            XElement scaleElement = null;
+
             if (string.IsNullOrEmpty(model.Filename()) || string.IsNullOrEmpty(model.Extension()) || string.IsNullOrEmpty(model.DocumentRoot()) || string.IsNullOrEmpty(model.ElementXPath()))
                 throw new ArgumentNullException($"Null required model {model.ToString()}");
-            if (!string.IsNullOrEmpty(model.ScaleFilename()))
-                xmlScale = CVMUnzipper.OpenScaleFile(content, model.ScaleFilename());
-
-            if (!string.IsNullOrEmpty(xmlScale))
-            {
-                xmlScale = new string(xmlScale.Where(ch => XmlConvert.IsXmlChar(ch)).ToArray());  // Treats invalids xml chars
-                xmlScale = xmlScale.Replace("&#x1F;", "");    // Why does CVM let weird line separators?
-                XDocument _sdoc = XDocument.Parse(xmlScale);
-                scaleElement = _sdoc.XPathSelectElement($"Documento");
-            }
 
             var xml = CVMUnzipper.OpenFile(content, model.Extension(), model.Filename());
             if (string.IsNullOrEmpty(xml))
@@ -49,18 +39,24 @@ namespace Utilities
                 return list;
 
             foreach (var e in elements)
-            {
-                var _tmpModel = model.FromElement(e);
-                if (scaleElement != null)
-                {
-                    //_tmpModel.Currency = int.Parse(scaleElement.Element("CodigoMoeda").Value);
-                    //_tmpModel.CurrencyScale = int.Parse(scaleElement.Element("CodigoEscalaMoeda").Value);
-                    //_tmpModel.ShareScale = int.Parse(scaleElement.Element("CodigoEscalaQuantidade").Value);
-                }
-                list.Add(_tmpModel);
-            }
+                list.Add(model.FromElement(e));
+            
             return list.Where(x => x != null).ToList();
         }    
+
+        public static Scale GetScale(Stream content, string extension, string scaleFile = CVMFile.DefaultScaleFile)
+        {
+            extension = extension.Replace(".", "").ToLower();
+            var xml = CVMUnzipper.OpenFile(content, extension, scaleFile);
+            if (string.IsNullOrEmpty(xml))
+                throw new ArgumentNullException();
+
+            xml = new string(xml.Where(ch => XmlConvert.IsXmlChar(ch)).ToArray());  // Treats invalids xml chars
+            xml = xml.Replace("&#x1F;", "");    // Why does CVM let weird line separators?
+            XDocument _doc = XDocument.Parse(xml);
+            XElement el = _doc.XPathSelectElement("Documento");
+            return new Scale().FromElement(el);
+        }
         
     }
 }

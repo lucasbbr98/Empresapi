@@ -8,6 +8,9 @@ namespace Utilities
         {
             try
             {
+                if (string.IsNullOrEmpty(cnpj))
+                    return cnpj;
+
                 return Convert.ToUInt64(cnpj).ToString(@"00\.000\.000\/0000\-00");
             }
             catch
