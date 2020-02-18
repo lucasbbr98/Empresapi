@@ -18,9 +18,8 @@ namespace Empresapi.Controllers
     using Models.Xml.DFP;
     using Models.Xml.FRE;
     using Models.Xml;
-    using Constants;
     using System.Threading;
-    using System.Net.Http;
+    using System.IO;
 
     public class DebugController : BaseController
     {
@@ -41,6 +40,22 @@ namespace Empresapi.Controllers
         private readonly IFRECompanyFixedAssetService freCompanyFixedAssetService;
         private readonly IFRECompanyAuditorService freCompanyAuditorService;
         private readonly IFRECompanyDebtService freCompanyDebtService;
+        private readonly IFRECompanyShareholderService freCompanyShareholderService;
+        private readonly IFRECompanyCapitalDistributionService freCompanyCapitalDistributionService;
+        private readonly IFRECompanyRelatedTransactionService freCompanyRelatedTransactionService;
+        private readonly IFRECompanyShareBuybackService freCompanyShareBuybackService;
+        private readonly IFRECompanyTreasuryActionService freCompanyTreasuryActionService;
+        private readonly IFRECompanyAdministratorService freCompanyAdministratorService;
+        private readonly IFRECompanyCommitteeMemberService freCompanyCommitteeMemberService;
+        private readonly IFRECompanyFamilyRelationshipService freCompanyFamilyRelationshipService;
+        private readonly IFRECompanySubordinateRelationshipService freCompanySubordinateRelationshipService;
+        private readonly IFRECompanyBoardCompensationService freCompanyBoardCompensationService;
+        private readonly IFRECompanyAdministrationCompensationService freCompanyAdministrationCompensationService;
+        private readonly IFRECompanyCapitalIncreaseService freCompanyCapitalIncreaseService;
+        private readonly IFRECompanyCapitalEventService freCompanyCapitalEventService;
+        private readonly IFRECompanyCapitalReductionService freCompanyCapitalReductionService;
+
+
 
         public DebugController(
             ILogger<DebugController> logger,
@@ -58,7 +73,21 @@ namespace Empresapi.Controllers
             IFRECompanyOwnershipService freCompanyOwnershipService,
             IFRECompanyFixedAssetService freCompanyFixedAssetService,
             IFRECompanyAuditorService freCompanyAuditorService,
-            IFRECompanyDebtService freCompanyDebtService
+            IFRECompanyDebtService freCompanyDebtService,
+            IFRECompanyShareholderService freCompanyShareholderService,
+            IFRECompanyCapitalDistributionService freCompanyCapitalDistributionService,
+            IFRECompanyRelatedTransactionService freCompanyRelatedTransactionService,
+            IFRECompanyShareBuybackService freCompanyShareBuybackService,
+            IFRECompanyTreasuryActionService freCompanyTreasuryActionService,
+            IFRECompanyAdministratorService freCompanyAdministratorService,
+            IFRECompanyCommitteeMemberService freCompanyCommitteeMemberService,
+            IFRECompanyFamilyRelationshipService freCompanyFamilyRelationshipService,
+            IFRECompanySubordinateRelationshipService freCompanySubordinateRelationshipService,
+            IFRECompanyBoardCompensationService freCompanyBoardCompensationService,
+            IFRECompanyAdministrationCompensationService freCompanyAdministrationCompensationService,
+            IFRECompanyCapitalIncreaseService freCompanyCapitalIncreaseService,
+            IFRECompanyCapitalEventService freCompanyCapitalEventService,
+            IFRECompanyCapitalReductionService freCompanyCapitalReductionService
             )
         {
             this.logger = logger;
@@ -77,6 +106,20 @@ namespace Empresapi.Controllers
             this.freCompanyFixedAssetService = freCompanyFixedAssetService;
             this.freCompanyAuditorService = freCompanyAuditorService;
             this.freCompanyDebtService = freCompanyDebtService;
+            this.freCompanyShareholderService = freCompanyShareholderService;
+            this.freCompanyCapitalDistributionService = freCompanyCapitalDistributionService;
+            this.freCompanyRelatedTransactionService = freCompanyRelatedTransactionService;
+            this.freCompanyShareBuybackService = freCompanyShareBuybackService;
+            this.freCompanyTreasuryActionService = freCompanyTreasuryActionService;
+            this.freCompanyAdministratorService = freCompanyAdministratorService;
+            this.freCompanyCommitteeMemberService = freCompanyCommitteeMemberService;
+            this.freCompanyFamilyRelationshipService = freCompanyFamilyRelationshipService;
+            this.freCompanySubordinateRelationshipService = freCompanySubordinateRelationshipService;
+            this.freCompanyBoardCompensationService = freCompanyBoardCompensationService;
+            this.freCompanyAdministrationCompensationService = freCompanyAdministrationCompensationService;
+            this.freCompanyCapitalIncreaseService = freCompanyCapitalIncreaseService;
+            this.freCompanyCapitalEventService = freCompanyCapitalEventService;
+            this.freCompanyCapitalReductionService = freCompanyCapitalReductionService;
         }
 
         [HttpGet("dwqdwqdwqdwq")]
@@ -581,34 +624,108 @@ namespace Empresapi.Controllers
             }
         }
 
-        [HttpGet("")]
+        [HttpGet("dwdqwdqw")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> GetFiles()
+        {
+            try
+            {
+                var sources = (await cvmSourceService.GetAllWhere(new { Document = "FRE" })).ToList();
+                List<Task> tasks = new List<Task>();
+                var semaphore = new SemaphoreSlim(20, 80);
+                List<int> errors = new List<int>();
+                List<int> toDo = new List<int> { 38855, 38859, 38862, 38875, 41649, 41655, 41654, 41692, 41693, 41697, 41701, 45154, 45158 };
+
+                var last = sources.Last().Id;
+                foreach (var s in sources)
+                {
+                    if (!toDo.Any(x => s.Id == x))
+                        continue;
+
+                    try
+                    {
+                        var content = await httpClientService.DownloadFile(s.Url);
+                        SaveStreamAsFile(content, $"{s.SequenceNumber}.zip");
+                        Debug.Print($"Done {s.Id} out of {last}");
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add(s.Id);
+                        Debug.Print($"ERROR {s.Id} | Reason: {ex.ToString()}");
+                    }
+
+                }
+                Debug.Print(errors.ToString());
+                foreach (var e in errors)
+                {
+                    Debug.Print($"DELETE AND REDO SourceId {e.ToString()}");
+                }
+
+                return Ok(new
+                {
+                    Code = 200,
+                    Message = "OK"
+                });
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, e.Message);
+                return StatusCode(500);
+            }
+        }
+
+        public static void SaveStreamAsFile(Stream inputStream, string fileName, string filePath = "D:\\lucascvm")
+        {
+            DirectoryInfo info = new DirectoryInfo(filePath);
+            if (!info.Exists)
+            {
+                info.Create();
+            }
+
+            string path = Path.Combine(filePath, fileName);
+            using (FileStream outputFileStream = new FileStream(path, FileMode.Create))
+            {
+                inputStream.CopyTo(outputFileStream);
+            }
+        }
+
+
+        [HttpGet("dwqdqwwqdwq")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> InsertFRE()
         {
             try
             {
                 var sources = (await cvmSourceService.GetAllWhere(new { Document = "FRE" })).ToList();
-                var done = await freCompanyAuditorService.GetAll();
-
+                var done = await freCompanyCapitalDistributionService.GetAll();
 
 
                 var len = sources.Count;
                 List<Task> tasks = new List<Task>();
                 var semaphore = new SemaphoreSlim(20, 80);
                 List<int> errors = new List<int>();
-                List<int> mustDo = new List<int> { 44905, 44913, 44968, 44988, 45102, 45237, 46145, 46177, 46270, 46590, 48121, 48110, 48190, 48252, 48325, 48370, 48350, 48594, 48655 };
+                List<int> toDo = new List<int> {44276, 44345, 47769, 48406 };
+                foreach(var i in toDo)
+                {
+                    var zList = await freCompanyCapitalDistributionService.GetAllWhere(new { SourceId = i});
+                    foreach (var z in zList)
+                        await freCompanyCapitalDistributionService.Delete(z);
+
+                }
+
                 var last = sources.Last().Id;
                 foreach (var s in sources)
                 {
-                    if (!mustDo.Any(x => x == s.Id))
+                    if (!toDo.Any(x => x == s.Id))
                         continue;
-
                     try
                     {
                         var content = await httpClientService.DownloadFile(s.Url);
-                        var data = XmlParser<FRECompanyAuditor>.ParseElements(content);
-                        data = data.Where(i => i != null && i != default(FRECompanyAuditor)).ToList();
+                        var data = XmlParser<FRECompanyCapitalDistribution>.ParseElements(content);
+                        data = data.Where(i => i != null && i != default(FRECompanyCapitalDistribution)).ToList();
                         if (!data.Any())
                             continue;
+
 
                         foreach (var d in data)
                         {
@@ -617,9 +734,8 @@ namespace Empresapi.Controllers
                                 d.ReferenceDate = s.ReferenceDate;
                                 d.SourceId = s.Id;
                                 d.CompanyId = s.CompanyId;
-                                d.Cnpj = Formatter.CNPJ(d.Cnpj);
 
-                                var dbr = await freCompanyAuditorService.Add(d);
+                                var dbr = await freCompanyCapitalDistributionService.Add(d);
                                 if (dbr != HttpStatusCode.OK)
                                     errors.Add(s.Id);
 
@@ -649,7 +765,6 @@ namespace Empresapi.Controllers
                         Debug.Print($"ERROR {s.Id} | Reason: {ex.ToString()}");
                     }
                 }
-
                 Debug.Print(errors.ToString());
                 foreach (var e in errors)
                 {
@@ -668,5 +783,102 @@ namespace Empresapi.Controllers
                 return StatusCode(500);
             }
         }
+
+        [HttpGet("dwqdqaawwqdwq")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> InsertFREFromHD()
+        {
+            try
+            {
+                List<Task> tasks = new List<Task>();
+                var semaphore = new SemaphoreSlim(20, 80);
+                var sources = (await cvmSourceService.GetAllWhere(new { Document = "FRE" })).ToList();
+                var done = await freCompanyCapitalReductionService.GetAll();
+                foreach (var d in done)
+                    sources.RemoveAll(x => x.Id == d.SourceId);
+
+                var len = sources.Count;
+                List<int> errors = new List<int>();
+
+                var last = sources.Last().Id;
+                foreach (var s in sources)
+                {
+                    try
+                    {
+                        Stream content = System.IO.File.OpenRead(@$"D:\lucascvm\{s.SequenceNumber}.zip");
+                        var data = XmlParser<FRECompanyCapitalReduction>.ParseElements(content);
+                        data = data.Where(i => i != null && i != default(FRECompanyCapitalReduction)).ToList();
+                        if (!data.Any())
+                            continue;
+
+                        foreach (var d in data)
+                        {
+
+                            try
+                            {
+                                d.ReferenceDate = s.ReferenceDate;
+                                d.SourceId = s.Id;
+                                d.CompanyId = s.CompanyId;
+
+                                var dbr = freCompanyCapitalReductionService.Add(d);
+
+                            }
+                            catch (ArgumentNullException a)
+                            {
+                                errors.Add(s.Id);
+                                Debug.Print($"ERROR {s.Id} | Reason: {a.ToString()}");
+                            }
+                            catch (NotImplementedException n)
+                            {
+                                errors.Add(s.Id);
+                                Debug.Print($"ERROR {s.Id} | Reason: {n.ToString()}");
+                            }
+                            catch (Exception e)
+                            {
+                                errors.Add(s.Id);
+                                Debug.Print($"ERROR {s.Id} | Reason: {e.ToString()}");
+                            }
+                        }
+
+                        Debug.Print($"Inserted {s.Id} OUT OF {last}");
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add(s.Id);
+                        Debug.Print($"ERROR {s.Id} | Reason: {ex.ToString()}");
+                    }
+                }
+
+
+                Debug.Print(errors.ToString());
+                foreach (var e in errors)
+                    Debug.Print($"DELETE AND REDO SourceId {e.ToString()}");
+
+
+                return Ok(new
+                {
+                    Code = 200,
+                    Message = "OK"
+                });
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, e.Message);
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("")]
+        public async Task<IActionResult> BacenSGS()
+        {   //http://api.bcb.gov.br/dados/serie/bcdata.sgs.20749/dados?formato=csv&dataInicial=01/01/2010&dataFinal=31/12/2016
+            var docCode = 432;
+            var initialDate = new DateTime(year: 2019, month: 1, day: 1).ToString("dd/MM/yyyy");
+            var finalDate = new DateTime(year: 2019, month: 12, day: 31).ToString("dd/MM/yyyy");
+            var url = $"http://api.bcb.gov.br/dados/serie/bcdata.sgs.{docCode}/dados?formato=json&dataInicial={initialDate}&dataFinal={finalDate}";
+            var json = await httpClientService.Get(url);
+
+            return Ok();
+        }
+
     }
 }

@@ -6,5 +6,6 @@ namespace Services.Interfaces
     public interface IHttpClientService
     {
         public Task<Stream> DownloadFile(string url);
+        public Task<string> Get(string url);
     }
 }

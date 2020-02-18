@@ -81,8 +81,20 @@ namespace Empresapi
             services.AddTransient<IFRECompanyFixedAssetService, FRECompanyFixedAssetService>();
             services.AddTransient<IFRECompanyAuditorService, FRECompanyAuditorService>();
             services.AddTransient<IFRECompanyDebtService, FRECompanyDebtService>();
-
-
+            services.AddTransient<IFRECompanyShareholderService, FRECompanyShareholderService>();
+            services.AddTransient<IFRECompanyCapitalDistributionService, FRECompanyCapitalDistributionService>();
+            services.AddTransient<IFRECompanyRelatedTransactionService, FRECompanyRelatedTransactionService>();
+            services.AddTransient<IFRECompanyShareBuybackService, FRECompanyShareBuybackService>();
+            services.AddTransient<IFRECompanyTreasuryActionService, FRECompanyTreasuryActionService>();
+            services.AddTransient<IFRECompanyAdministratorService, FRECompanyAdministratorService>();
+            services.AddTransient<IFRECompanyCommitteeMemberService, FRECompanyCommitteeMemberService>();
+            services.AddTransient<IFRECompanyFamilyRelationshipService, FRECompanyFamilyRelationshipService>();
+            services.AddTransient<IFRECompanySubordinateRelationshipService, FRECompanySubordinateRelationshipService>();
+            services.AddTransient<IFRECompanyBoardCompensationService, FRECompanyBoardCompensationService>();
+            services.AddTransient<IFRECompanyAdministrationCompensationService, FRECompanyAdministrationCompensationService>();
+            services.AddTransient<IFRECompanyCapitalIncreaseService, FRECompanyCapitalIncreaseService>();
+            services.AddTransient<IFRECompanyCapitalEventService, FRECompanyCapitalEventService>();
+            services.AddTransient<IFRECompanyCapitalReductionService, FRECompanyCapitalReductionService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

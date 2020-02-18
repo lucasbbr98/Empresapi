@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace Services
@@ -24,6 +25,20 @@ namespace Services
                return await response.Content.ReadAsStreamAsync();
 
             return null;
+        }
+
+        public async Task<string> Get(string url)
+        {
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+                client.DefaultRequestHeaders.AcceptLanguage.Add(new StringWithQualityHeaderValue("pt"));
+                client.DefaultRequestHeaders.Host = "api.bcb.gov.br";
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.106 Safari/537.36");
+                client.DefaultRequestHeaders.Connection.Add("keep-alive");
+                return await client.GetStringAsync(url);
+            }
         }
 
         //public async Task<List<T>> GetListItems<T>(string url)
